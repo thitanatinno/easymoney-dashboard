@@ -72,12 +72,18 @@ def main():
         # NOTE: do NOT add --disable-software-rasterizer here — on ARM without
         # a GPU, software rasterizer is the only rendering path; disabling it
         # causes a completely blank (white) screen.
+        #
+        # NOTE: do NOT add --disable-features=VizDisplayCompositor here either.
+        # VizDisplayCompositor is responsible for pushing rendered frames to the
+        # physical display.  Disabling it causes the page to render correctly in
+        # Playwright's internal buffer (screenshots work) but nothing is ever
+        # composited to the screen → completely white physical display.
         "--no-sandbox",
         "--disable-dev-shm-usage",
         "--disable-gpu",
         "--use-gl=swiftshader",           # force software renderer (SwiftShader)
         "--ignore-gpu-blocklist",
-        "--disable-features=VizDisplayCompositor",
+        "--force-color-profile=srgb",     # stable colour space for Pi framebuffer
     ]
     if args.fullscreen_mode == "kiosk":
         launch_args += ["--kiosk"]
