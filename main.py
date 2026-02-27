@@ -92,9 +92,35 @@ def main():
         context = browser.new_context(viewport=None)
         page = context.new_page()
 
-        # Fix B — log JS errors and console errors to help diagnose blank screen
+        # ── Diagnostic listeners ──────────────────────────────────────────────
         page.on("pageerror", lambda exc: print(f"[PAGE JS ERROR] {exc}"))
-        page.on("console", lambda msg: print(f"[CONSOLE {msg.type.upper()}] {msg.text}") if msg.type == "error" else None)
+
+        # ALL console levels (not just errors) — warnings / logs often reveal why SPA is blank
+        def _log_console(msg):
+            level = msg.type.upper()
+            print(f"[CONSOLE {level}] {msg.text}")
+            # also print any attached JS values
+            for i, arg in enumerate(msg.args):
+                try:
+                    print(f"  arg[{i}]: {arg.json_value()}")
+                except Exception:
+                    pass
+        page.on("console", _log_console)
+
+        # Failed network requests (404, net::ERR_*, etc.)
+        page.on(
+            "requestfailed",
+            lambda req: print(
+                f"[REQUEST FAILED] {req.method} {req.url}  "
+                f"failure={req.failure}"
+            ),
+        )
+
+        # Non-2xx HTTP responses (bundle missing, API 401/403, etc.)
+        def _log_bad_response(resp):
+            if resp.status >= 400:
+                print(f"[HTTP {resp.status}] {resp.request.method} {resp.url}")
+        page.on("response", _log_bad_response)
 
         # --- Login ---
         login_module.login(
