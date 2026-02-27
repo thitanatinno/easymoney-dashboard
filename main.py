@@ -69,10 +69,14 @@ def main():
 
     launch_args = [
         # Stability / rendering fixes for Raspberry Pi (ARM)
-        "--disable-gpu",
+        # NOTE: do NOT add --disable-software-rasterizer here — on ARM without
+        # a GPU, software rasterizer is the only rendering path; disabling it
+        # causes a completely blank (white) screen.
         "--no-sandbox",
         "--disable-dev-shm-usage",
-        "--disable-software-rasterizer",
+        "--disable-gpu",
+        "--use-gl=swiftshader",           # force software renderer (SwiftShader)
+        "--ignore-gpu-blocklist",
         "--disable-features=VizDisplayCompositor",
     ]
     if args.fullscreen_mode == "kiosk":
