@@ -45,6 +45,14 @@ def login(
 
     print(f"Redirecting to: {redirect_url}")
     page.goto(redirect_url, wait_until="load", timeout=60_000)
+    print(f"After goto — URL: {page.url!r}  title: {page.title()!r}")
+
+    # Hash-based SPAs (#/route) don't trigger a real load event on goto.
+    # A reload forces the full page load INCLUDING the hash route rendering.
+    print("Reloading to force hash-route SPA render...")
+    page.reload(wait_until="load", timeout=60_000)
+    print(f"After reload — URL: {page.url!r}  title: {page.title()!r}")
+
     print("Waiting for SPA root element to be visible...")
     page.locator("#app > *").wait_for(state="visible", timeout=60_000)
     print("SPA root element is visible.")
