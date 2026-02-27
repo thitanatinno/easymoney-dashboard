@@ -5,6 +5,7 @@
 set -euo pipefail
 
 # ── paths ─────────────────────────────────────────────────────────────────────
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAIN_SCRIPT="$SCRIPT_DIR/run_pi_playwright_login.sh"
 
