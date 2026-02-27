@@ -67,7 +67,14 @@ def main():
 
     chromium_path = args.chromium_path.strip() or None
 
-    launch_args = []
+    launch_args = [
+        # Stability / rendering fixes for Raspberry Pi (ARM)
+        "--disable-gpu",
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-software-rasterizer",
+        "--disable-features=VizDisplayCompositor",
+    ]
     if args.fullscreen_mode == "kiosk":
         launch_args += ["--kiosk"]
 
@@ -93,6 +100,10 @@ def main():
             login_button_text=args.login_button_text,
             wait_seconds=args.wait_seconds,
         )
+
+        # Give the SPA a moment to finish rendering after networkidle
+        time.sleep(2)
+        page.bring_to_front()
 
         screenshot_path = os.path.join(args.out_dir, "after_redirect.png")
         page.screenshot(path=screenshot_path, full_page=True)

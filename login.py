@@ -44,4 +44,5 @@ def login(
     page.wait_for_load_state("networkidle", timeout=wait_seconds * 1000)
 
     print(f"Redirecting to: {redirect_url}")
-    page.goto(redirect_url, wait_until="domcontentloaded")
+    page.goto(redirect_url, wait_until="networkidle", timeout=60_000)
+    page.bring_to_front()
