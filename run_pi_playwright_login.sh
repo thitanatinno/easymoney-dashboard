@@ -42,11 +42,11 @@ mkdir -p "$WORKDIR" "$OUT_DIR" "$LOG_DIR"
 log() { echo "[$(date '+%F %T')] $*" | tee -a "$LOG_FILE" ; }
 
 need_cmd() { command -v "$1" >/dev/null 2>&1; }
+need_pkg()  { dpkg -s "$1" &>/dev/null 2>&1; }
 
 install_pkgs() {
-  # shellcheck disable=SC2068
   sudo apt-get update -y
-  sudo apt-get install -y $@
+  sudo apt-get install -y "$@"
 }
 
 log "WORKDIR: $WORKDIR"
@@ -54,7 +54,17 @@ log "LOG: $LOG_FILE"
 
 log "Step: ensure base packages"
 if ! need_cmd python3; then install_pkgs python3; fi
-install_pkgs python3-venv python3-pip ca-certificates curl
+MISSING_PKGS=()
+need_pkg python3-venv    || MISSING_PKGS+=(python3-venv)
+need_pkg python3-pip     || MISSING_PKGS+=(python3-pip)
+need_pkg ca-certificates || MISSING_PKGS+=(ca-certificates)
+need_cmd curl            || MISSING_PKGS+=(curl)
+if [[ ${#MISSING_PKGS[@]} -gt 0 ]]; then
+  log "Installing missing base packages: ${MISSING_PKGS[*]}"
+  install_pkgs "${MISSING_PKGS[@]}"
+else
+  log "Base packages already installed, skipping"
+fi
 
 log "Step: ensure Chromium installed"
 if [[ -z "$CHROMIUM_PATH" ]]; then
@@ -82,17 +92,37 @@ fi
 
 log "Step: create venv + install Python Playwright"
 if [[ ! -d "$VENV_DIR" ]]; then
+  log "Creating virtual environment..."
   python3 -m venv "$VENV_DIR"
 fi
 # shellcheck disable=SC1090
 source "$VENV_DIR/bin/activate"
-python -m pip install --upgrade pip setuptools wheel
-python -m pip install --upgrade playwright
 
-# Install system deps Playwright likes (safe even if already installed)
-# This may install extra libs; comment out if you want minimal.
-log "Step: install Playwright deps (may take a bit)"
-python -m playwright install-deps chromium || true
+# Only install pip build tools if any are missing
+if ! python -c "import pip, setuptools, wheel" &>/dev/null 2>&1; then
+  log "Installing pip build tools (pip/setuptools/wheel)..."
+  python -m pip install --upgrade pip setuptools wheel
+else
+  log "pip build tools already present, skipping"
+fi
+
+# Only install Playwright if not already installed
+if ! python -c "import playwright" &>/dev/null 2>&1; then
+  log "Installing Playwright..."
+  python -m pip install playwright
+else
+  log "Playwright already installed, skipping"
+fi
+
+# Install Playwright system deps only once (tracked via sentinel file)
+PLAYWRIGHT_DEPS_FLAG="$WORKDIR/.playwright_deps_installed"
+if [[ ! -f "$PLAYWRIGHT_DEPS_FLAG" ]]; then
+  log "Step: install Playwright system deps (may take a bit)"
+  python -m playwright install-deps chromium || true
+  touch "$PLAYWRIGHT_DEPS_FLAG"
+else
+  log "Playwright system deps already installed, skipping"
+fi
 
 log "Step: run automation"
 python "$PWD/main.py" \
