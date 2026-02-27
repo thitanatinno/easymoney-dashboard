@@ -44,5 +44,7 @@ def login(
     page.wait_for_load_state("networkidle", timeout=wait_seconds * 1000)
 
     print(f"Redirecting to: {redirect_url}")
-    page.goto(redirect_url, wait_until="networkidle", timeout=60_000)
-    page.bring_to_front()
+    page.goto(redirect_url, wait_until="load", timeout=60_000)
+    print("Waiting for SPA root element to be visible...")
+    page.locator("#app > *").wait_for(state="visible", timeout=60_000)
+    print("SPA root element is visible.")

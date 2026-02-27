@@ -88,6 +88,10 @@ def main():
         context = browser.new_context(viewport=None)
         page = context.new_page()
 
+        # Fix B — log JS errors and console errors to help diagnose blank screen
+        page.on("pageerror", lambda exc: print(f"[PAGE JS ERROR] {exc}"))
+        page.on("console", lambda msg: print(f"[CONSOLE {msg.type.upper()}] {msg.text}") if msg.type == "error" else None)
+
         # --- Login ---
         login_module.login(
             page=page,
