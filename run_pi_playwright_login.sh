@@ -18,6 +18,12 @@ FULLSCREEN_MODE="${FULLSCREEN_MODE:-kiosk}"   # kiosk|maximized
 HEADLESS="${HEADLESS:-0}"                     # 1=headless, 0=headful
 CHROMIUM_PATH="${CHROMIUM_PATH:-}"            # optional override
 
+# Tab-switching options:
+TAB_SWITCH="${TAB_SWITCH:-true}"              # true=enable tab cycling, false=skip
+EXTRA_TAB_URLS="${EXTRA_TAB_URLS:-}"          # space-separated extra tab URLs
+TAB_SWITCH_INTERVAL="${TAB_SWITCH_INTERVAL:-300}"  # seconds between tab switches
+export TAB_SWITCH
+
 # Optional credentials via env (recommended) or prompted by Python:
 #   export LOGIN_USER="..."
 #   export LOGIN_PASS="..."
@@ -49,7 +55,6 @@ if [[ -z "$CHROMIUM_PATH" ]]; then
     CHROMIUM_PATH="$(command -v chromium)"
   else
     log "Chromium not found, installing..."
-    # Raspberry Pi OS often has chromium-browser; Debian/Ubuntu often has chromium
     if sudo apt-get install -y chromium-browser; then
       CHROMIUM_PATH="$(command -v chromium-browser)"
     else
@@ -81,7 +86,7 @@ log "Step: install Playwright deps (may take a bit)"
 python -m playwright install-deps chromium || true
 
 log "Step: run automation"
-python "$PWD/login_and_redirect.py" \
+python "$PWD/main.py" \
   --url "$URL" \
   --redirect-url "$REDIRECT_URL" \
   --username-placeholder "$USERNAME_PLACEHOLDER" \
@@ -91,6 +96,8 @@ python "$PWD/login_and_redirect.py" \
   --fullscreen-mode "$FULLSCREEN_MODE" \
   --headless "$HEADLESS" \
   --chromium-path "$CHROMIUM_PATH" \
-  --out-dir "$OUT_DIR" | tee -a "$LOG_FILE"
+  --out-dir "$OUT_DIR" \
+  --tab-switch-interval "$TAB_SWITCH_INTERVAL" \
+  ${EXTRA_TAB_URLS:+--extra-tab-urls $EXTRA_TAB_URLS} | tee -a "$LOG_FILE"
 
 log "DONE. Screenshot should be at: $OUT_DIR/after_redirect.png"

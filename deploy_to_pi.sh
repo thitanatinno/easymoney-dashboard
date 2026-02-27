@@ -87,7 +87,19 @@ if [ "$MODE" == "init" ]; then
         echo -e "${RED}✗ Failed to set ownership${NC}"
         exit 1
     fi
-    
+
+    # Run autostart setup (init only)
+    echo -e "${YELLOW}Setting up autostart...${NC}"
+    sshpass -p "$PI_PASS" ssh "${PI_USER}@${PI_HOST}" "bash ${DEST_DIR}/setup_autostart.sh"
+
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ Autostart configured successfully${NC}"
+        echo -e "${YELLOW}⚠ Remember to edit ~/.config/autostart env file on the Pi with your credentials${NC}"
+    else
+        echo -e "${RED}✗ Failed to configure autostart${NC}"
+        exit 1
+    fi
+
 elif [ "$MODE" == "update" ]; then
     echo -e "${YELLOW}Updating - Pulling latest changes...${NC}"
     
@@ -110,6 +122,17 @@ elif [ "$MODE" == "update" ]; then
         echo -e "${RED}✗ Failed to update repository${NC}"
         exit 1
     fi
+fi
+
+# Upload .env file to Pi
+echo -e "${YELLOW}Uploading .env to Pi...${NC}"
+sshpass -p "$PI_PASS" scp .env "${PI_USER}@${PI_HOST}:${DEST_DIR}/.env"
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✓ .env uploaded successfully${NC}"
+else
+    echo -e "${RED}✗ Failed to upload .env${NC}"
+    exit 1
 fi
 
 # Set executable permissions for shell scripts
