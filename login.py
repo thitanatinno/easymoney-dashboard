@@ -95,21 +95,23 @@ def login(
 
     print(f"Redirecting to: {redirect_url}")
     try:
-        page.goto(redirect_url, wait_until="load", timeout=60_000)
+        page.goto(redirect_url, wait_until="domcontentloaded", timeout=60_000)
     except Exception as exc:
         print(f"[WARN] goto(redirect_url) raised: {exc}")
     print(f"After goto — URL: {page.url!r}  title: {page.title()!r}")
     _dump_dom_state("after goto")
 
-    # Hash-based SPAs (#/route) don't trigger a real load event on goto.
-    # A reload forces the full page load INCLUDING the hash route rendering.
-    print("Reloading to force hash-route SPA render...")
+    # Wait for the SPA's session-check API calls (getGlobalUserInfo, getPublicKey, etc.)
+    # to complete BEFORE inspecting the DOM.  Calling page.reload() here would abort
+    # those in-flight requests, causing the Vue auth guard to fail and redirect back
+    # to /login — which is the root cause of the white screen.
+    print("Waiting for network idle after redirect (letting SPA auth settle)...")
     try:
-        page.reload(wait_until="load", timeout=60_000)
+        page.wait_for_load_state("networkidle", timeout=30_000)
+        print("Network idle after redirect.")
     except Exception as exc:
-        print(f"[WARN] reload() raised: {exc}")
-    print(f"After reload — URL: {page.url!r}  title: {page.title()!r}")
-    _dump_dom_state("after reload")
+        print(f"[WARN] networkidle after redirect timed out: {exc}")
+    print(f"After networkidle — URL: {page.url!r}  title: {page.title()!r}")
 
     print("Waiting for SPA root element to be visible...")
     try:
