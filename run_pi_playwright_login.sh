@@ -22,7 +22,7 @@ REDIRECT_URL="${REDIRECT_URL:-https://www.hyxicloud.com/#/dataWall}"
 USERNAME_PLACEHOLDER="${USERNAME_PLACEHOLDER:-Login Account}"
 PASSWORD_SELECTOR="${PASSWORD_SELECTOR:-input[name='password']}"
 LOGIN_BUTTON_TEXT="${LOGIN_BUTTON_TEXT:-Login}"
-WAIT_AFTER_LOGIN_SECONDS="${WAIT_AFTER_LOGIN_SECONDS:-5}"
+WAIT_AFTER_LOGIN_SECONDS="${WAIT_AFTER_LOGIN_SECONDS:-30}"
 FULLSCREEN_MODE="${FULLSCREEN_MODE:-kiosk}"   # kiosk|maximized
 HEADLESS="${HEADLESS:-0}"                     # 1=headless, 0=headful
 CHROMIUM_PATH="${CHROMIUM_PATH:-}"            # optional override

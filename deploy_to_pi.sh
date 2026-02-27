@@ -61,9 +61,14 @@ if [ "$MODE" == "init" ]; then
     DIR_EXISTS=$(sshpass -p "$PI_PASS" ssh "${PI_USER}@${PI_HOST}" "[ -d ${DEST_DIR} ] && echo 'yes' || echo 'no'")
     
     if [ "$DIR_EXISTS" == "yes" ]; then
-        echo -e "${RED}Error: Directory ${DEST_DIR} already exists on Pi${NC}"
-        echo -e "${YELLOW}Use 'update' mode to pull latest changes or manually remove the directory${NC}"
-        exit 1
+        echo -e "${YELLOW}Directory ${DEST_DIR} already exists on Pi — removing it...${NC}"
+        sshpass -p "$PI_PASS" ssh "${PI_USER}@${PI_HOST}" "sudo rm -rf ${DEST_DIR}"
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✓ Existing directory removed${NC}"
+        else
+            echo -e "${RED}✗ Failed to remove existing directory${NC}"
+            exit 1
+        fi
     fi
     
     # Clone repository on Pi
