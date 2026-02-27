@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Load credentials and overrides from .env in the same directory as this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/.env" ]]; then
+  set -o allexport
+  # shellcheck disable=SC1090
+  source <(grep -v '^\s*#' "$SCRIPT_DIR/.env" | grep -v '^\s*$')
+  set +o allexport
+fi
+
 WORKDIR="${WORKDIR:-$PWD/pw_py_login}"
 VENV_DIR="$WORKDIR/venv"
 OUT_DIR="$WORKDIR/out"
