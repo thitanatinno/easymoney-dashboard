@@ -17,7 +17,7 @@ def login(
     username_placeholder: str = "Login Account",
     password_selector: str = "input[name='password']",
     login_button_text: str = "Login",
-    wait_seconds: int = 5,
+    wait_seconds: int = 10,
 ) -> None:
     """Authenticate against *url* then navigate to *redirect_url*.
 
