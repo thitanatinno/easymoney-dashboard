@@ -26,7 +26,13 @@ def parse_args():
     p.add_argument("--password-selector", default="input[name='password']")
     p.add_argument("--login-button-text", default="Login")
     p.add_argument("--wait-seconds", type=int, default=5)
-    p.add_argument("--fullscreen-mode", choices=["kiosk", "maximized"], default="kiosk")
+    p.add_argument(
+        "--fullscreen-mode",
+        choices=["cdp", "f11"],
+        default="cdp",
+        help="cdp: OS-level fullscreen via Chrome DevTools Protocol; "
+             "f11: send F11 keystroke to trigger browser fullscreen.",
+    )
     p.add_argument("--headless", type=int, choices=[0, 1], default=0)
     p.add_argument("--chromium-path", default="")
     p.add_argument("--out-dir", required=True)
@@ -85,9 +91,8 @@ def main():
         # "--ignore-gpu-blocklist",
         # "--force-color-profile=srgb",     # stable colour space for Pi framebuffer
     ]
-    if args.fullscreen_mode == "kiosk":
-        print("Using kiosk mode for fullscreen (no window borders, fixed size).")
-        launch_args += ["--kiosk"]
+    print(f"Using {args.fullscreen_mode!r} fullscreen mode — window size 1920x1080.")
+    launch_args += ["--window-size=1920,1080"]
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -96,7 +101,7 @@ def main():
             args=launch_args,
         )
 
-        context = browser.new_context(viewport=None)
+        context = browser.new_context(viewport={"width": 1920, "height": 1080})
         page = context.new_page()
 
         # ── Diagnostic listeners ──────────────────────────────────────────────
@@ -146,6 +151,29 @@ def main():
         time.sleep(2)
         print("Bringing page to front...")
         page.bring_to_front()
+
+        # --- Fullscreen (post-login) ---
+        if args.fullscreen_mode == "cdp":
+            try:
+                cdp = context.new_cdp_session(page)
+                try:
+                    result = cdp.send("Browser.getWindowForTarget")
+                    window_id = result["windowId"]
+                    cdp.send(
+                        "Browser.setWindowBounds",
+                        {"windowId": window_id, "bounds": {"windowState": "fullscreen"}},
+                    )
+                    print("CDP fullscreen applied.")
+                finally:
+                    cdp.detach()
+            except Exception as exc:
+                print(f"[WARN] CDP fullscreen failed (non-fatal): {exc}")
+        elif args.fullscreen_mode == "f11":
+            try:
+                page.keyboard.press("F11")
+                print("F11 sent — browser fullscreen triggered.")
+            except Exception as exc:
+                print(f"[WARN] F11 fullscreen failed (non-fatal): {exc}")
 
         # --- Tab switching ---
         if tab_switch_enabled:
