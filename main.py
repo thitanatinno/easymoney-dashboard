@@ -68,24 +68,25 @@ def main():
     chromium_path = args.chromium_path.strip() or None
 
     launch_args = [
-        # Stability / rendering fixes for Raspberry Pi (ARM)
-        # NOTE: do NOT add --disable-software-rasterizer here — on ARM without
-        # a GPU, software rasterizer is the only rendering path; disabling it
-        # causes a completely blank (white) screen.
-        #
-        # NOTE: do NOT add --disable-features=VizDisplayCompositor here either.
-        # VizDisplayCompositor is responsible for pushing rendered frames to the
-        # physical display.  Disabling it causes the page to render correctly in
-        # Playwright's internal buffer (screenshots work) but nothing is ever
-        # composited to the screen → completely white physical display.
-        "--no-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--use-gl=swiftshader",           # force software renderer (SwiftShader)
-        "--ignore-gpu-blocklist",
-        "--force-color-profile=srgb",     # stable colour space for Pi framebuffer
+        # # Stability / rendering fixes for Raspberry Pi (ARM)
+        # # NOTE: do NOT add --disable-software-rasterizer here — on ARM without
+        # # a GPU, software rasterizer is the only rendering path; disabling it
+        # # causes a completely blank (white) screen.
+        # #
+        # # NOTE: do NOT add --disable-features=VizDisplayCompositor here either.
+        # # VizDisplayCompositor is responsible for pushing rendered frames to the
+        # # physical display.  Disabling it causes the page to render correctly in
+        # # Playwright's internal buffer (screenshots work) but nothing is ever
+        # # composited to the screen → completely white physical display.
+        # "--no-sandbox",
+        # "--disable-dev-shm-usage",
+        # "--disable-gpu",
+        # "--use-gl=swiftshader",           # force software renderer (SwiftShader)
+        # "--ignore-gpu-blocklist",
+        # "--force-color-profile=srgb",     # stable colour space for Pi framebuffer
     ]
     if args.fullscreen_mode == "kiosk":
+        print("Using kiosk mode for fullscreen (no window borders, fixed size).")
         launch_args += ["--kiosk"]
 
     with sync_playwright() as p:
@@ -143,11 +144,8 @@ def main():
 
         # Give the SPA a moment to finish rendering after networkidle
         time.sleep(2)
+        print("Bringing page to front...")
         page.bring_to_front()
-
-        screenshot_path = os.path.join(args.out_dir, "after_redirect.png")
-        page.screenshot(path=screenshot_path, full_page=True)
-        print(f"Screenshot saved: {screenshot_path}")
 
         # --- Tab switching ---
         if tab_switch_enabled:
