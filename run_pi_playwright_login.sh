@@ -23,7 +23,6 @@ USERNAME_PLACEHOLDER="${USERNAME_PLACEHOLDER:-Login Account}"
 PASSWORD_SELECTOR="${PASSWORD_SELECTOR:-input[name='password']}"
 LOGIN_BUTTON_TEXT="${LOGIN_BUTTON_TEXT:-Login}"
 WAIT_AFTER_LOGIN_SECONDS="${WAIT_AFTER_LOGIN_SECONDS:-30}"
-FULLSCREEN_MODE="${FULLSCREEN_MODE:-kiosk}"   # kiosk|maximized
 HEADLESS="${HEADLESS:-0}"                     # 1=headless, 0=headful
 CHROMIUM_PATH="${CHROMIUM_PATH:-}"            # optional override
 
@@ -132,7 +131,6 @@ python "$PWD/main.py" \
   --password-selector "$PASSWORD_SELECTOR" \
   --login-button-text "$LOGIN_BUTTON_TEXT" \
   --wait-seconds "$WAIT_AFTER_LOGIN_SECONDS" \
-  --fullscreen-mode "$FULLSCREEN_MODE" \
   --headless "$HEADLESS" \
   --chromium-path "$CHROMIUM_PATH" \
   --out-dir "$OUT_DIR" \

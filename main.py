@@ -26,14 +26,6 @@ def parse_args():
     p.add_argument("--password-selector", default="input[name='password']")
     p.add_argument("--login-button-text", default="Login")
     p.add_argument("--wait-seconds", type=int, default=5)
-    p.add_argument(
-        "--fullscreen-mode",
-        choices=["cdp", "f11", "kiosk"],
-        default="cdp",
-        help="cdp: OS-level fullscreen via Chrome DevTools Protocol; "
-             "f11: send F11 keystroke to trigger browser fullscreen; "
-             "kiosk: launch Chromium with --kiosk flag (true kiosk/fullscreen mode).",
-    )
     p.add_argument("--headless", type=int, choices=[0, 1], default=0)
     p.add_argument("--chromium-path", default="")
     p.add_argument("--out-dir", required=True)
@@ -56,8 +48,8 @@ def parse_args():
     return p.parse_args()
 
 
-def apply_fullscreen(context, page, fullscreen_mode: str) -> None:
-    """Try all three fullscreen strategies in sequence (CDP → F11 → kiosk flag)."""
+def apply_fullscreen(context, page) -> None:
+    """Try all three fullscreen strategies in sequence (CDP → F11 → JS requestFullscreen)."""
     # 1. CDP
     try:
         cdp = context.new_cdp_session(page)
@@ -125,7 +117,7 @@ def main():
         # "--ignore-gpu-blocklist",
         # "--force-color-profile=srgb",     # stable colour space for Pi framebuffer
     ]
-    print(f"Using {args.fullscreen_mode!r} fullscreen mode — window size 1920x1080.")
+    print("Applying fullscreen — window size 1920x1080.")
     launch_args += ["--window-size=1920,1080"]
 
     with sync_playwright() as p:
@@ -169,7 +161,7 @@ def main():
         page.on("response", _log_bad_response)
 
         # --- Fullscreen (pre-login) ---
-        apply_fullscreen(context, page, args.fullscreen_mode)
+        apply_fullscreen(context, page)
 
         # --- Login ---
         login_module.login(
