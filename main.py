@@ -56,6 +56,39 @@ def parse_args():
     return p.parse_args()
 
 
+def apply_fullscreen(context, page, fullscreen_mode: str) -> None:
+    """Try all three fullscreen strategies in sequence (CDP → F11 → kiosk flag)."""
+    # 1. CDP
+    try:
+        cdp = context.new_cdp_session(page)
+        try:
+            result = cdp.send("Browser.getWindowForTarget")
+            window_id = result["windowId"]
+            cdp.send(
+                "Browser.setWindowBounds",
+                {"windowId": window_id, "bounds": {"windowState": "fullscreen"}},
+            )
+            print("CDP fullscreen applied.")
+        finally:
+            cdp.detach()
+    except Exception as exc:
+        print(f"[WARN] CDP fullscreen failed (non-fatal): {exc}")
+
+    # 2. F11
+    try:
+        page.keyboard.press("F11")
+        print("F11 sent — browser fullscreen triggered.")
+    except Exception as exc:
+        print(f"[WARN] F11 fullscreen failed (non-fatal): {exc}")
+
+    # 3. Kiosk via JS requestFullscreen
+    try:
+        page.evaluate("document.documentElement.requestFullscreen()")
+        print("JS requestFullscreen (kiosk-style) applied.")
+    except Exception as exc:
+        print(f"[WARN] JS requestFullscreen failed (non-fatal): {exc}")
+
+
 def main():
     args = parse_args()
 
@@ -94,8 +127,6 @@ def main():
     ]
     print(f"Using {args.fullscreen_mode!r} fullscreen mode — window size 1920x1080.")
     launch_args += ["--window-size=1920,1080"]
-    if args.fullscreen_mode == "kiosk":
-        launch_args.append("--kiosk")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -137,6 +168,9 @@ def main():
                 print(f"[HTTP {resp.status}] {resp.request.method} {resp.url}")
         page.on("response", _log_bad_response)
 
+        # --- Fullscreen (pre-login) ---
+        apply_fullscreen(context, page, args.fullscreen_mode)
+
         # --- Login ---
         login_module.login(
             page=page,
@@ -154,31 +188,6 @@ def main():
         time.sleep(2)
         print("Bringing page to front...")
         page.bring_to_front()
-
-        # --- Fullscreen (post-login) ---
-        if args.fullscreen_mode == "cdp":
-            try:
-                cdp = context.new_cdp_session(page)
-                try:
-                    result = cdp.send("Browser.getWindowForTarget")
-                    window_id = result["windowId"]
-                    cdp.send(
-                        "Browser.setWindowBounds",
-                        {"windowId": window_id, "bounds": {"windowState": "fullscreen"}},
-                    )
-                    print("CDP fullscreen applied.")
-                finally:
-                    cdp.detach()
-            except Exception as exc:
-                print(f"[WARN] CDP fullscreen failed (non-fatal): {exc}")
-        elif args.fullscreen_mode == "f11":
-            try:
-                page.keyboard.press("F11")
-                print("F11 sent — browser fullscreen triggered.")
-            except Exception as exc:
-                print(f"[WARN] F11 fullscreen failed (non-fatal): {exc}")
-        elif args.fullscreen_mode == "kiosk":
-            print("Kiosk mode active — launched with --kiosk flag.")
 
         # --- Tab switching ---
         if tab_switch_enabled:
