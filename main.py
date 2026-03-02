@@ -28,10 +28,11 @@ def parse_args():
     p.add_argument("--wait-seconds", type=int, default=5)
     p.add_argument(
         "--fullscreen-mode",
-        choices=["cdp", "f11"],
+        choices=["cdp", "f11", "kiosk"],
         default="cdp",
         help="cdp: OS-level fullscreen via Chrome DevTools Protocol; "
-             "f11: send F11 keystroke to trigger browser fullscreen.",
+             "f11: send F11 keystroke to trigger browser fullscreen; "
+             "kiosk: launch Chromium with --kiosk flag (true kiosk/fullscreen mode).",
     )
     p.add_argument("--headless", type=int, choices=[0, 1], default=0)
     p.add_argument("--chromium-path", default="")
@@ -93,6 +94,8 @@ def main():
     ]
     print(f"Using {args.fullscreen_mode!r} fullscreen mode — window size 1920x1080.")
     launch_args += ["--window-size=1920,1080"]
+    if args.fullscreen_mode == "kiosk":
+        launch_args.append("--kiosk")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -174,6 +177,8 @@ def main():
                 print("F11 sent — browser fullscreen triggered.")
             except Exception as exc:
                 print(f"[WARN] F11 fullscreen failed (non-fatal): {exc}")
+        elif args.fullscreen_mode == "kiosk":
+            print("Kiosk mode active — launched with --kiosk flag.")
 
         # --- Tab switching ---
         if tab_switch_enabled:
