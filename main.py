@@ -49,22 +49,22 @@ def parse_args():
 
 
 def apply_fullscreen(context, page) -> None:
-    """Try all three fullscreen strategies in sequence (CDP → F11 → JS requestFullscreen)."""
-    # 1. CDP
-    try:
-        cdp = context.new_cdp_session(page)
-        try:
-            result = cdp.send("Browser.getWindowForTarget")
-            window_id = result["windowId"]
-            cdp.send(
-                "Browser.setWindowBounds",
-                {"windowId": window_id, "bounds": {"windowState": "fullscreen"}},
-            )
-            print("CDP fullscreen applied.")
-        finally:
-            cdp.detach()
-    except Exception as exc:
-        print(f"[WARN] CDP fullscreen failed (non-fatal): {exc}")
+    # """Try all three fullscreen strategies in sequence (CDP → F11 → JS requestFullscreen)."""
+    # # 1. CDP
+    # try:
+    #     cdp = context.new_cdp_session(page)
+    #     try:
+    #         result = cdp.send("Browser.getWindowForTarget")
+    #         window_id = result["windowId"]
+    #         cdp.send(
+    #             "Browser.setWindowBounds",
+    #             {"windowId": window_id, "bounds": {"windowState": "fullscreen"}},
+    #         )
+    #         print("CDP fullscreen applied.")
+    #     finally:
+    #         cdp.detach()
+    # except Exception as exc:
+    #     print(f"[WARN] CDP fullscreen failed (non-fatal): {exc}")
 
     # 2. F11
     try:
