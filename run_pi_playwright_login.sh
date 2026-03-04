@@ -65,23 +65,46 @@ else
   log "Base packages already installed, skipping"
 fi
 
-log "Step: ensure Chromium installed"
-if [[ -z "$CHROMIUM_PATH" ]]; then
-  if need_cmd chromium-browser; then
-    CHROMIUM_PATH="$(command -v chromium-browser)"
-  elif need_cmd chromium; then
-    CHROMIUM_PATH="$(command -v chromium)"
+log "Step: ensure system Chromium installed (fallback option)"
+if ! need_cmd chromium-browser && ! need_cmd chromium; then
+  log "System Chromium not found, installing..."
+  if sudo apt-get install -y chromium-browser; then
+    SYSTEM_CHROMIUM_PATH="$(command -v chromium-browser)"
   else
-    log "Chromium not found, installing..."
-    if sudo apt-get install -y chromium-browser; then
-      CHROMIUM_PATH="$(command -v chromium-browser)"
-    else
-      sudo apt-get install -y chromium
-      CHROMIUM_PATH="$(command -v chromium)"
-    fi
+    sudo apt-get install -y chromium
+    SYSTEM_CHROMIUM_PATH="$(command -v chromium)"
+  fi
+else
+  if need_cmd chromium-browser; then
+    SYSTEM_CHROMIUM_PATH="$(command -v chromium-browser)"
+  else
+    SYSTEM_CHROMIUM_PATH="$(command -v chromium)"
   fi
 fi
-log "Chromium path: $CHROMIUM_PATH"
+log "System Chromium path: $SYSTEM_CHROMIUM_PATH"
+
+log "Step: ensure Playwright bundled Chromium installed"
+PLAYWRIGHT_CHROMIUM_FLAG="$WORKDIR/.playwright_chromium_installed"
+if [[ ! -f "$PLAYWRIGHT_CHROMIUM_FLAG" ]]; then
+  log "Installing Playwright bundled Chromium..."
+  python -m playwright install chromium
+  touch "$PLAYWRIGHT_CHROMIUM_FLAG"
+else
+  log "Playwright bundled Chromium already installed, skipping"
+fi
+
+# Load browser mode from .env
+BROWSER_MODE="${BROWSER_MODE:-playwright-bundle}"
+log "Browser mode: $BROWSER_MODE"
+
+# Set chromium path based on mode
+if [[ "$BROWSER_MODE" == "system-chromium" ]]; then
+  CHROMIUM_PATH="$SYSTEM_CHROMIUM_PATH"
+  log "Using system Chromium: $CHROMIUM_PATH"
+else
+  CHROMIUM_PATH=""  # Empty = use Playwright bundle
+  log "Using Playwright bundled Chromium (no explicit path)"
+fi
 
 # If no display, default to headless unless user explicitly set HEADLESS
 if [[ "${DISPLAY:-}" == "" && "$HEADLESS" == "0" ]]; then

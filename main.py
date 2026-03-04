@@ -121,11 +121,22 @@ def main():
     # launch_args += ["--window-size=1920,1080"]
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=bool(args.headless),
-            executable_path=chromium_path,
-            args=launch_args,
-        )
+        if chromium_path:
+            # System Chromium mode
+            browser = p.chromium.launch(
+                headless=bool(args.headless),
+                executable_path=chromium_path,
+                args=launch_args,
+            )
+            print(f"Launched with system Chromium: {chromium_path}")
+        else:
+            # Playwright bundle mode (recommended)
+            browser = p.chromium.launch(
+                headless=bool(args.headless),
+                # No executable_path = uses Playwright's bundled Chromium
+                args=launch_args,
+            )
+            print("Launched with Playwright bundled Chromium")
 
         context = browser.new_context(viewport={"width": 1920, "height": 1080})
         page = context.new_page()
