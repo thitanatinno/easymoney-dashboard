@@ -112,8 +112,8 @@ def main():
         # composited to the screen → completely white physical display.
         "--no-sandbox",
         "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--use-gl=swiftshader",           # force software renderer (SwiftShader)
+        # "--disable-gpu",
+        # "--use-gl=swiftshader",           # force software renderer (SwiftShader)
         "--ignore-gpu-blocklist",
         "--force-color-profile=srgb",     # stable colour space for Pi framebuffer
     ]
