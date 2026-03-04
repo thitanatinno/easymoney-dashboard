@@ -100,22 +100,22 @@ def main():
     chromium_path = args.chromium_path.strip() or None
 
     launch_args = [
-        # # Stability / rendering fixes for Raspberry Pi (ARM)
-        # # NOTE: do NOT add --disable-software-rasterizer here — on ARM without
-        # # a GPU, software rasterizer is the only rendering path; disabling it
-        # # causes a completely blank (white) screen.
-        # #
-        # # NOTE: do NOT add --disable-features=VizDisplayCompositor here either.
-        # # VizDisplayCompositor is responsible for pushing rendered frames to the
-        # # physical display.  Disabling it causes the page to render correctly in
-        # # Playwright's internal buffer (screenshots work) but nothing is ever
-        # # composited to the screen → completely white physical display.
-        # "--no-sandbox",
-        # "--disable-dev-shm-usage",
-        # "--disable-gpu",
-        # "--use-gl=swiftshader",           # force software renderer (SwiftShader)
-        # "--ignore-gpu-blocklist",
-        # "--force-color-profile=srgb",     # stable colour space for Pi framebuffer
+        # Stability / rendering fixes for Raspberry Pi (ARM)
+        # NOTE: do NOT add --disable-software-rasterizer here — on ARM without
+        # a GPU, software rasterizer is the only rendering path; disabling it
+        # causes a completely blank (white) screen.
+        #
+        # NOTE: do NOT add --disable-features=VizDisplayCompositor here either.
+        # VizDisplayCompositor is responsible for pushing rendered frames to the
+        # physical display.  Disabling it causes the page to render correctly in
+        # Playwright's internal buffer (screenshots work) but nothing is ever
+        # composited to the screen → completely white physical display.
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--use-gl=swiftshader",           # force software renderer (SwiftShader)
+        "--ignore-gpu-blocklist",
+        "--force-color-profile=srgb",     # stable colour space for Pi framebuffer
     ]
     print("Applying fullscreen — window size 1920x1080.")
     # launch_args += ["--window-size=1920,1080"]
@@ -171,9 +171,6 @@ def main():
                 print(f"[HTTP {resp.status}] {resp.request.method} {resp.url}")
         page.on("response", _log_bad_response)
 
-        # --- Fullscreen (pre-login) ---
-        apply_fullscreen(context, page)
-
         # --- Login ---
         login_module.login(
             page=page,
@@ -187,8 +184,11 @@ def main():
             wait_seconds=args.wait_seconds,
         )
 
-        # Give the SPA a moment to finish rendering after networkidle
-        time.sleep(2)
+        # Apply fullscreen after page has loaded and rendered
+        print("Applying fullscreen to loaded page...")
+        apply_fullscreen(context, page)
+        
+        # Ensure page is in focus
         print("Bringing page to front...")
         page.bring_to_front()
 

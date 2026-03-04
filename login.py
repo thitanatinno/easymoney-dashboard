@@ -77,7 +77,7 @@ def login(
         print(f"══ END SNAPSHOT [{label}] ══\n")
 
     print(f"Opening: {url}")
-    page.goto(url, wait_until="domcontentloaded")
+    page.goto(url, wait_until="load")
     print(f"Login page loaded — URL: {page.url!r}  title: {page.title()!r}")
 
     print("Filling credentials...")
@@ -85,38 +85,29 @@ def login(
     page.locator(password_selector).fill(password)
     page.get_by_role("button", name=login_button_text).click()
 
-    print("Waiting for network idle after login...")
+    print("Waiting for navigation after login...")
     try:
-        page.wait_for_load_state("networkidle", timeout=wait_seconds * 1000)
-        print("Network idle reached.")
+        page.wait_for_load_state("load", timeout=wait_seconds * 1000)
+        print("Page load completed.")
     except Exception as exc:
-        print(f"[WARN] wait_for_load_state(networkidle) timed out or errored: {exc}")
+        print(f"[WARN] wait_for_load_state(load) timed out or errored: {exc}")
     print(f"After login click — URL: {page.url!r}  title: {page.title()!r}")
 
     print(f"Redirecting to: {redirect_url}")
     try:
-        page.goto(redirect_url, wait_until="domcontentloaded", timeout=60_000)
+        page.goto(redirect_url, wait_until="load", timeout=60_000)
     except Exception as exc:
         print(f"[WARN] goto(redirect_url) raised: {exc}")
     print(f"After goto — URL: {page.url!r}  title: {page.title()!r}")
     _dump_dom_state("after goto")
 
     # Wait for the SPA's session-check API calls (getGlobalUserInfo, getPublicKey, etc.)
-    # to complete BEFORE inspecting the DOM.  Calling page.reload() here would abort
-    # those in-flight requests, causing the Vue auth guard to fail and redirect back
-    # to /login — which is the root cause of the white screen.
-    print("Waiting for network idle after redirect (letting SPA auth settle)...")
+    # to complete BEFORE inspecting the DOM. Instead of networkidle (which is
+    # unreliable for SPAs), we wait for the actual content to appear.
+    print("Waiting for SPA root element to be visible (primary wait)...")
     try:
-        page.wait_for_load_state("networkidle", timeout=30_000)
-        print("Network idle after redirect.")
-    except Exception as exc:
-        print(f"[WARN] networkidle after redirect timed out: {exc}")
-    print(f"After networkidle — URL: {page.url!r}  title: {page.title()!r}")
-
-    print("Waiting for SPA root element to be visible...")
-    try:
-        page.locator("#app > *").wait_for(state="visible", timeout=60_000)
-        print("SPA root element is visible.")
+        page.locator("#app > *").first.wait_for(state="visible", timeout=60_000)
+        print("SPA root element is visible and rendered.")
     except Exception as exc:
         print(f"[ERROR] SPA root element never became visible: {exc}")
         _dump_dom_state("SPA root wait FAILED")
@@ -133,5 +124,7 @@ def login(
                         pass
             except Exception:
                 pass
+        # Re-raise the exception since this is a critical error
+        raise
 
     _dump_dom_state("login() complete")
