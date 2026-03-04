@@ -118,7 +118,7 @@ def main():
         # "--force-color-profile=srgb",     # stable colour space for Pi framebuffer
     ]
     print("Applying fullscreen — window size 1920x1080.")
-    launch_args += ["--window-size=1920,1080"]
+    # launch_args += ["--window-size=1920,1080"]
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
