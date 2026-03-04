@@ -74,11 +74,11 @@ def apply_fullscreen(context, page) -> None:
         print(f"[WARN] F11 fullscreen failed (non-fatal): {exc}")
 
     # 3. Kiosk via JS requestFullscreen
-    try:
-        page.evaluate("document.documentElement.requestFullscreen()")
-        print("JS requestFullscreen (kiosk-style) applied.")
-    except Exception as exc:
-        print(f"[WARN] JS requestFullscreen failed (non-fatal): {exc}")
+    # try:
+    #     page.evaluate("document.documentElement.requestFullscreen()")
+    #     print("JS requestFullscreen (kiosk-style) applied.")
+    # except Exception as exc:
+    #     print(f"[WARN] JS requestFullscreen failed (non-fatal): {exc}")
 
 
 def main():
