@@ -83,29 +83,6 @@ else
 fi
 log "System Chromium path: $SYSTEM_CHROMIUM_PATH"
 
-log "Step: ensure Playwright bundled Chromium installed"
-PLAYWRIGHT_CHROMIUM_FLAG="$WORKDIR/.playwright_chromium_installed"
-if [[ ! -f "$PLAYWRIGHT_CHROMIUM_FLAG" ]]; then
-  log "Installing Playwright bundled Chromium..."
-  python -m playwright install chromium
-  touch "$PLAYWRIGHT_CHROMIUM_FLAG"
-else
-  log "Playwright bundled Chromium already installed, skipping"
-fi
-
-# Load browser mode from .env
-BROWSER_MODE="${BROWSER_MODE:-playwright-bundle}"
-log "Browser mode: $BROWSER_MODE"
-
-# Set chromium path based on mode
-if [[ "$BROWSER_MODE" == "system-chromium" ]]; then
-  CHROMIUM_PATH="$SYSTEM_CHROMIUM_PATH"
-  log "Using system Chromium: $CHROMIUM_PATH"
-else
-  CHROMIUM_PATH=""  # Empty = use Playwright bundle
-  log "Using Playwright bundled Chromium (no explicit path)"
-fi
-
 # If no display, default to headless unless user explicitly set HEADLESS
 if [[ "${DISPLAY:-}" == "" && "$HEADLESS" == "0" ]]; then
   log "No DISPLAY detected -> switching to HEADLESS=1"
@@ -136,6 +113,17 @@ else
   log "Playwright already installed, skipping"
 fi
 
+# Install Playwright bundled Chromium (after Playwright package is installed)
+log "Step: ensure Playwright bundled Chromium installed"
+PLAYWRIGHT_CHROMIUM_FLAG="$WORKDIR/.playwright_chromium_installed"
+if [[ ! -f "$PLAYWRIGHT_CHROMIUM_FLAG" ]]; then
+  log "Installing Playwright bundled Chromium..."
+  python -m playwright install chromium
+  touch "$PLAYWRIGHT_CHROMIUM_FLAG"
+else
+  log "Playwright bundled Chromium already installed, skipping"
+fi
+
 # Install Playwright system deps only once (tracked via sentinel file)
 PLAYWRIGHT_DEPS_FLAG="$WORKDIR/.playwright_deps_installed"
 if [[ ! -f "$PLAYWRIGHT_DEPS_FLAG" ]]; then
@@ -144,6 +132,18 @@ if [[ ! -f "$PLAYWRIGHT_DEPS_FLAG" ]]; then
   touch "$PLAYWRIGHT_DEPS_FLAG"
 else
   log "Playwright system deps already installed, skipping"
+fi
+
+# Set browser mode and path
+BROWSER_MODE="${BROWSER_MODE:-playwright-bundle}"
+log "Browser mode: $BROWSER_MODE"
+
+if [[ "$BROWSER_MODE" == "system-chromium" ]]; then
+  CHROMIUM_PATH="$SYSTEM_CHROMIUM_PATH"
+  log "Using system Chromium: $CHROMIUM_PATH"
+else
+  CHROMIUM_PATH=""  # Empty = use Playwright bundle
+  log "Using Playwright bundled Chromium (no explicit path)"
 fi
 
 log "Step: run automation"
